@@ -1,127 +1,221 @@
 ---
 name: ascii-art-exceptional
-description: Genera arte ASCII de alta fidelidad desde una imagen (preferido) o una descripción, con control de estilo y legibilidad.
-version: 0.2.0
+description: Genera arte ASCII de alta fidelidad desde una imagen real, especialmente retratos, con variantes optimizadas para WhatsApp y validación iterativa de parecido.
+version: 0.3.0
 author: rojas
-tags: [ascii, art, image, typography, dithering, cli]
+tags: [ascii, art, image, typography, dithering, cli, whatsapp, portrait]
 ---
 
 # ASCII Art Excepcional
 
 ## Propósito
-Convertir **una imagen real** (preferido) o **una descripción** en arte ASCII **que sí se parezca** al input: buena silueta, contraste, proporción y detalle.
+Convertir **una imagen real** en arte ASCII que **sí conserve identidad visual**: silueta, sombras, proporción facial, ojos, nariz, boca, barba/cabello y separación sujeto/fondo. Debe priorizar **parecido** sobre estilización, especialmente en **selfies/retratos** y salidas para **WhatsApp**.
 
 ## Límites (No-hará)
-- No prometer “idéntico”: el ASCII es compresión.
-- Si no hay imagen (solo descripción), el resultado es interpretativo.
-- Si el sujeto es muy complejo o la resolución es baja, se pedirá:
-  - recorte (ROI), o
-  - mayor ancho (120/160/200), o
-  - versión por zonas (cara / fondo).
+- No prometer “idéntico”: ASCII siempre comprime.
+- No fingir que una salida pobre es “fiel”. Si no se parece, hay que **iterar**.
+- No mezclar demasiados objetivos a la vez. Elegir primero: **parecido**, **legibilidad móvil**, o **estilo**.
+- Si no hay acceso a la imagen real (solo preview, screenshot o descripción), reconocer que la fidelidad estará limitada.
+
+## Prioridades de calidad
+Orden obligatorio:
+1. **Reconocibilidad del sujeto**
+2. **Proporción correcta del rostro/cuerpo**
+3. **Separación sujeto/fondo**
+4. **Legibilidad en el medio destino** (WhatsApp, terminal, README, etc.)
+5. **Estilo**
 
 ## Entradas / Salidas
 
 ### Entradas
-- Imagen (png/jpg/webp) **idealmente** con:
-  - sujeto claro, buen contraste
-  - sin motion blur
-- Parámetros:
-  - ancho objetivo: 80 / 120 / 160 / 200
+- Imagen (png/jpg/webp) idealmente original
+- Parámetros mínimos:
+  - ancho objetivo: 80 / 96 / 120 / 160 / 200
   - fondo: claro u oscuro
-  - estilo: fiel | alto-contraste | posterizado | edge/contornos
+  - destino: WhatsApp | terminal | markdown | ANSI color
+  - prioridad: parecido | compacto | estilizado
+  - sujeto: rostro | busto | escena completa
 
 ### Salidas
-- ASCII monoespaciado (texto)
-- 2–3 variantes con diferente preproceso
-- (Opcional) versión “ANSI color” si el usuario lo quiere
+- ASCII monoespaciado
+- **2–4 variantes** nombradas
+- Recomendación explícita de cuál usar
+- Si el output no es suficientemente fiel: siguiente iteración propuesta
 
-## Workflow / Flujo (imagen)
+## Flujo obligatorio
 
-### Paso 0 — Asegurar contexto
-Preguntar SIEMPRE:
-- ancho objetivo
-- fondo (claro/oscuro)
-- prioridad: parecido (fiel) vs estilo (artístico)
+### Paso 0 — Definir contexto de salida
+Preguntar o inferir:
+- destino (si es WhatsApp, preferir ancho 80–100 o bloques compactos)
+- fondo claro/oscuro
+- foco: selfie/cara/escena completa
+- prioridad: **parecido** o **comodidad para reenviar**
 
-### Paso 0.5 — Describir y validar (obligatorio)
-Antes de convertir a ASCII, **describe la imagen con tus palabras** (sujeto, escena, elementos clave, iluminación, fondo) y pide al usuario que confirme/corrija.
-- Si el usuario dice que no se parece: pide recorte/zoom o una foto con más resolución/contraste.
-- No sigas al render ASCII hasta que el usuario diga “sí, esa es la imagen / correcto”.
+### Paso 0.5 — Descripción y validación (obligatorio)
+Antes de renderizar, describir la imagen con palabras:
+- sujeto
+- pose/ángulo
+- iluminación
+- fondo
+- rasgos dominantes (barba, lentes, gorra, perfil, sonrisa, etc.)
 
-### Paso 1 — Preproceso (clave para que se parezca)
-Aplicar mentalmente/operativamente estas transformaciones (en este orden):
-1) **Recorte** al sujeto (evita que el fondo destruya el rango dinámico)
-2) **Escala** manteniendo aspecto
-3) **Corrección de aspecto ASCII** (caracteres no son cuadrados)
-4) **Contraste/Gamma** (subir micro-contraste)
-5) **Dithering** (Floyd–Steinberg u ordenado) para preservar detalle
+Si el usuario dice “no se parece”, **no discutir**: iterar.
 
-### Paso 2 — Render ASCII (recomendado vía CLI)
-Preferir herramientas probadas cuando esté disponible el entorno:
-- `chafa` (recomendado: controles finos de tamaño, **font-ratio**, y dither)
-- `jp2a` (clásico, soporta `--background=dark|light`, `--chars`, `--width/--size`)
+### Paso 1 — Decidir encuadre (crítico)
+No renderizar la imagen completa por defecto. Elegir una de estas estrategias:
+- **Rostro/face crop** → para parecido máximo
+- **Busto** → para identidad + contexto
+- **Escena completa** → solo si el fondo importa realmente
 
-Notas verificadas en documentación:
-- `chafa` soporta `--font-ratio` (por defecto 1/2 en modo símbolos) y `--dither` con sinónimos: `fs` ≈ Floyd–Steinberg (diffusion). Fuente: man page de chafa.
-- `jp2a` soporta `--background=dark|light` y `--chars=...` y `--width/--size`. Fuente: man page de jp2a.
+Regla: para selfies y WhatsApp, preferir **rostro** o **busto**. El fondo casi siempre destruye rango tonal útil.
 
-Comandos de referencia (ajustar al caso):
+### Paso 2 — Pipeline de preproceso
+Aplicar este pipeline conceptual u operativo:
+1. **Crop ROI** del sujeto
+2. **Desaturar / grayscale**
+3. **Auto-contrast** moderado
+4. **Ajuste de gamma** para preservar medios tonos
+5. **Sharpen/micro-contrast** suave si los rasgos se lavan
+6. **Resize** manteniendo aspecto
+7. **Corrección de aspecto ASCII** (font ratio)
+8. **Dither** si ayuda a rescatar textura, no por costumbre
 
-**chafa (fidelidad, grises, dither FS, ratio correcto)**
+### Paso 3 — Elegir modo según objetivo
+
+#### Modo A — Retrato fiel (recomendado para selfies)
+- ancho: 96 / 120 / 160
+- charset largo
+- preservar medios tonos
+- no exagerar contraste demasiado pronto
+
+#### Modo B — WhatsApp compacto
+- ancho: 72 / 80 / 96
+- priorizar silueta + ojos + barba/boca
+- recortar más fuerte
+- evitar bloques demasiado anchos que rompan en móvil
+
+#### Modo C — Bloques densos
+- usar `░▒▓█` si el usuario prioriza impacto visual más que textura fina
+
+### Paso 4 — CLI recomendada
+Preferir herramientas probadas cuando existan.
+
+## Recomendaciones verificadas
+### chafa
+Confirmado en docs/manpage:
+- `--font-ratio` existe y en symbol mode el default es `1/2`
+- `--dither fs` es alias de Floyd–Steinberg / diffusion
+- `--work` aumenta precisión
+- `--color-extractor median` suele dar salida más crujiente que `average`
+- `--preprocess` puede mejorar contraste/colores antes de convertir
+
+### jp2a
+Usar cuando esté disponible por simplicidad y buen rango tonal en texto puro:
+- `--background=dark|light`
+- `--width`
+- `--chars`
+
+## Comandos de referencia
+
+### chafa — retrato fiel, texto puro
 ```bash
-chafa -c none --symbols=ascii --font-ratio 1/2 --dither fs -s {{WIDTH}}x {{IMAGE}}
+chafa -f symbols -c none --symbols=ascii \
+  --font-ratio 1/2 --color-extractor median \
+  --work 7 --dither fs --dither-grain 4x4 \
+  --preprocess on -s {{WIDTH}}x {{IMAGE}}
 ```
 
-**chafa (más detalle: subir work + dither grain)**
+### chafa — retrato WhatsApp compacto
 ```bash
-chafa -c none --symbols=ascii --font-ratio 1/2 --work 7 --dither diffusion --dither-grain 4x4 -s {{WIDTH}}x {{IMAGE}}
+chafa -f symbols -c none --symbols=ascii \
+  --font-ratio 1/2 --color-extractor median \
+  --work 7 --dither ordered --dither-grain 2x4 \
+  --preprocess on -s {{WIDTH}}x {{IMAGE}}
 ```
 
-**jp2a (fidelidad simple + background correcto)**
+### jp2a — fidelidad simple
 ```bash
 jp2a --background=dark --width={{WIDTH}} {{IMAGE}}
 ```
 
-**jp2a (charset custom, más rango tonal)**
+### jp2a — retrato con más rango tonal
 ```bash
-jp2a --background=dark --width={{WIDTH}} --chars=" .'\"`^,:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$" {{IMAGE}}
+jp2a --background=dark --width={{WIDTH}} \
+  --chars=" .'\"^,:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$" \
+  {{IMAGE}}
 ```
 
-### Paso 3 — Selección de charset
-- Para fidelidad: ` .:-=+*#%@`
-- Para estilo “bold”: ` .'`^",:;Il!i~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$`
+## Charsets recomendados
 
-### Paso 4 — Post-proceso
-- Recortar espacios laterales
-- Asegurar que el bloque no exceda el ancho
-- Entregar 2–3 variantes nombradas: FIEL / CONTRASTE / ESTILIZADA
-
-## Workflow / Flujo (solo descripción)
-1) Pedir: sujeto, composición, mood, y “nivel de detalle” (minimalista vs denso)
-2) Hacer 2 bocetos (silueta) y 1 versión detallada
-3) Iterar con el usuario (esto NO puede “parecerse a una foto” literal)
-
-## Criterios de calidad (smoke check humano)
-- Silueta reconocible en 2–3 segundos
-- Contraste equilibrado (sin empastar)
-- Proporción correcta (no “aplastado”)
-- No excede ancho solicitado
-
-## Ejemplos
-
-### Desde imagen (checklist)
-- ¿Quieres 80/120/160/200 columnas?
-- ¿Fondo oscuro o claro?
-- ¿Prefieres fidelidad o estilo?
-
-### Desde descripción (minimalista)
-Input: “Un gato sentado mirando a la luna, minimalista, 80 columnas, fondo oscuro.”
-Output:
+### 1) Fiel / general
+```text
+ .:-=+*#%@
 ```
-      /\_/\
-     ( o.o )
-      > ^ <        _
-                .-(_)-.
-                 \   /
-                  `~`
+
+### 2) Largo / retrato realista
+```text
+ .'"^,:;Il!i~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$
 ```
+
+### 3) Bloques / impacto
+```text
+ ░▒▓█
+```
+
+## Iteración obligatoria (clave)
+Después de generar, evaluar explícitamente:
+- ¿se reconoce en 2–3 segundos?
+- ¿ojos/nariz/boca/barba/cabello siguen presentes?
+- ¿el rostro quedó aplastado o estirado?
+- ¿se perdió demasiada información en fondo o sombras?
+- ¿sirve para el medio destino (WhatsApp)?
+
+Si falla, iterar en este orden:
+1. recortar más al rostro
+2. subir ancho
+3. cambiar charset a uno más largo
+4. corregir contraste/gamma
+5. cambiar dither
+6. probar bloques `░▒▓█`
+
+## Benchmarking / comparación
+Si el usuario trae un ejemplo mejor de otro modelo o herramienta:
+- tomarlo como **benchmark válido**
+- identificar qué ganó: rango tonal, densidad, proporción, textura
+- ajustar el siguiente intento para acercarse a eso
+- no defender una salida mediocre
+
+### Benchmark preferido para retratos/selfies
+Si una variante previa logra mejor parecido gracias a:
+- **más rango tonal**
+- **más densidad de caracteres**
+- **menos posterización**
+- **más altura útil del rostro**
+
+entonces úsala como referencia para iteraciones futuras.
+
+Regla práctica:
+- Para retratos, preferir salidas tipo **“primer bloque denso/tonal”** sobre versiones demasiado limpias, simétricas o iconizadas.
+- Si hay duda entre una salida “bonita” y una salida “que sí se parece”, elegir la que **sí se parece**.
+- Para WhatsApp, si el ancho lo permite, conservar densidad tonal antes que simplificar demasiado el charset.
+
+## WhatsApp mode
+Para WhatsApp:
+- preferir ancho **72–96** si se va a pegar directo al chat
+- evitar líneas excesivamente largas
+- entregar una versión limpia sin explicación alrededor si el usuario quiere reenviarla
+- si el retrato pierde demasiado detalle a 72–96, ofrecer versión “HD” de 120–160 y otra compacta
+
+## Criterios de smoke check humano
+Una salida pasa si:
+- la silueta y el rostro son reconocibles rápido
+- no parece un logo genérico ni una máscara simétrica
+- mantiene volumen (frente, pómulos, barba, pelo)
+- respeta el ancho pedido
+- hay al menos una variante claramente usable
+
+## Ejemplo de entrega ideal
+- **FIEL** → más parecido, ancho 120
+- **WHATSAPP** → más compacto, ancho 80
+- **BLOQUES** → más impacto visual
+- Recomendación: “Usa WHATSAPP si lo vas a pegar en chat; usa FIEL si lo vas a mandar como bloque monoespaciado grande.”
