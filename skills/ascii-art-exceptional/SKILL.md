@@ -1,50 +1,111 @@
 ---
 name: ascii-art-exceptional
-description: Genera arte ASCII excepcional desde una imagen o una descripción, con control de estilo y legibilidad.
-version: 0.1.0
+description: Genera arte ASCII de alta fidelidad desde una imagen (preferido) o una descripción, con control de estilo y legibilidad.
+version: 0.2.0
 author: rojas
-tags: [ascii, art, image, typography, rendering]
+tags: [ascii, art, image, typography, dithering, cli]
 ---
 
 # ASCII Art Excepcional
 
 ## Propósito
-Convertir **una imagen** (preferido) o **una descripción** en arte ASCII de alta calidad, legible y con estética cuidada.
+Convertir **una imagen real** (preferido) o **una descripción** en arte ASCII **que sí se parezca** al input: buena silueta, contraste, proporción y detalle.
 
 ## Límites (No-hará)
-- No afirmar fidelidad perfecta: el ASCII es una aproximación.
-- No inventar detalles cuando el input es ambiguo (pedir aclaración).
+- No prometer “idéntico”: el ASCII es compresión.
+- Si no hay imagen (solo descripción), el resultado es interpretativo.
+- Si el sujeto es muy complejo o la resolución es baja, se pedirá:
+  - recorte (ROI), o
+  - mayor ancho (120/160/200), o
+  - versión por zonas (cara / fondo).
 
 ## Entradas / Salidas
-- Entradas:
-  - Imagen (png/jpg/webp) o
-  - Descripción + estilo deseado
-- Salidas:
-  - Bloque de texto ASCII (monoespaciado)
-  - Variantes (tamaño/contraste) si se solicita
 
-## Workflow / Flujo
-1) Aclarar constraints: ancho objetivo (p.ej. 80/120/200), fondo (claro/oscuro), densidad, charset.
-2) Si hay imagen: decidir preproceso conceptual (recorte, escala, contraste) y elegir charset (p.ej. ` .:-=+*#%@`).
-3) Generar 2–3 versiones: (a) "fiel", (b) "alto contraste", (c) "estilizada"; luego seleccionar la mejor según criterio del usuario.
+### Entradas
+- Imagen (png/jpg/webp) **idealmente** con:
+  - sujeto claro, buen contraste
+  - sin motion blur
+- Parámetros:
+  - ancho objetivo: 80 / 120 / 160 / 200
+  - fondo: claro u oscuro
+  - estilo: fiel | alto-contraste | posterizado | edge/contornos
 
-## Criterios de calidad
-- Legible a distancia (macro-forma clara)
-- Buen manejo de contraste (no “todo @@@@”)
-- Respeta el ancho solicitado
-- Sin líneas rotas raras; padding consistente
+### Salidas
+- ASCII monoespaciado (texto)
+- 2–3 variantes con diferente preproceso
+- (Opcional) versión “ANSI color” si el usuario lo quiere
+
+## Workflow / Flujo (imagen)
+
+### Paso 0 — Asegurar contexto
+Preguntar SIEMPRE:
+- ancho objetivo
+- fondo (claro/oscuro)
+- prioridad: parecido (fiel) vs estilo (artístico)
+
+### Paso 1 — Preproceso (clave para que se parezca)
+Aplicar mentalmente/operativamente estas transformaciones (en este orden):
+1) **Recorte** al sujeto (evita que el fondo destruya el rango dinámico)
+2) **Escala** manteniendo aspecto
+3) **Corrección de aspecto ASCII** (caracteres no son cuadrados)
+4) **Contraste/Gamma** (subir micro-contraste)
+5) **Dithering** (Floyd–Steinberg u ordenado) para preservar detalle
+
+### Paso 2 — Render ASCII (recomendado vía CLI)
+Preferir herramientas probadas cuando esté disponible el entorno:
+- `chafa` (muy buena para terminal/ANSI, soporta dithering y sizing)
+- `jp2a` (clásico, rápido)
+- `img2txt.py` (caca-utils) (simple y útil)
+
+Comandos de referencia (ajustar al caso):
+
+**chafa (grises, buena fidelidad)**
+```bash
+chafa -c none --symbols=ascii --dither=fs -s {{WIDTH}}x {{IMAGE}}
+```
+
+**chafa (alto contraste / posterizado)**
+```bash
+chafa -c none --symbols=ascii --dither=ordered --threshold  --invert -s {{WIDTH}}x {{IMAGE}}
+```
+
+> Nota: la sintaxis exacta puede variar por versión; si el comando falla, revisar `chafa --help` y adaptar.
+
+### Paso 3 — Selección de charset
+- Para fidelidad: ` .:-=+*#%@`
+- Para estilo “bold”: ` .'`^",:;Il!i~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$`
+
+### Paso 4 — Post-proceso
+- Recortar espacios laterales
+- Asegurar que el bloque no exceda el ancho
+- Entregar 2–3 variantes nombradas: FIEL / CONTRASTE / ESTILIZADA
+
+## Workflow / Flujo (solo descripción)
+1) Pedir: sujeto, composición, mood, y “nivel de detalle” (minimalista vs denso)
+2) Hacer 2 bocetos (silueta) y 1 versión detallada
+3) Iterar con el usuario (esto NO puede “parecerse a una foto” literal)
+
+## Criterios de calidad (smoke check humano)
+- Silueta reconocible en 2–3 segundos
+- Contraste equilibrado (sin empastar)
+- Proporción correcta (no “aplastado”)
+- No excede ancho solicitado
 
 ## Ejemplos
-### Desde descripción
-Input: “Un gato sentado mirando a la luna, estilo minimalista, 80 columnas, fondo oscuro.”
-Output: (borrador)
+
+### Desde imagen (checklist)
+- ¿Quieres 80/120/160/200 columnas?
+- ¿Fondo oscuro o claro?
+- ¿Prefieres fidelidad o estilo?
+
+### Desde descripción (minimalista)
+Input: “Un gato sentado mirando a la luna, minimalista, 80 columnas, fondo oscuro.”
+Output:
 ```
       /\_/\
-     ( o.o )     _
-      > ^ <   .-(_)-.
-               \   /
-                `~`
+     ( o.o )
+      > ^ <        _
+                .-(_)-.
+                 \   /
+                  `~`
 ```
-
-### Desde imagen
-- Pide: ancho (80/120/200) y si quieres modo "fiel" o "posterizado".
