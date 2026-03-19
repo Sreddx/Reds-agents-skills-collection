@@ -43,6 +43,11 @@ Preguntar SIEMPRE:
 - fondo (claro/oscuro)
 - prioridad: parecido (fiel) vs estilo (artístico)
 
+### Paso 0.5 — Describir y validar (obligatorio)
+Antes de convertir a ASCII, **describe la imagen con tus palabras** (sujeto, escena, elementos clave, iluminación, fondo) y pide al usuario que confirme/corrija.
+- Si el usuario dice que no se parece: pide recorte/zoom o una foto con más resolución/contraste.
+- No sigas al render ASCII hasta que el usuario diga “sí, esa es la imagen / correcto”.
+
 ### Paso 1 — Preproceso (clave para que se parezca)
 Aplicar mentalmente/operativamente estas transformaciones (en este orden):
 1) **Recorte** al sujeto (evita que el fondo destruya el rango dinámico)
