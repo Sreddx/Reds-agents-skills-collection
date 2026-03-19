@@ -58,23 +58,34 @@ Aplicar mentalmente/operativamente estas transformaciones (en este orden):
 
 ### Paso 2 — Render ASCII (recomendado vía CLI)
 Preferir herramientas probadas cuando esté disponible el entorno:
-- `chafa` (muy buena para terminal/ANSI, soporta dithering y sizing)
-- `jp2a` (clásico, rápido)
-- `img2txt.py` (caca-utils) (simple y útil)
+- `chafa` (recomendado: controles finos de tamaño, **font-ratio**, y dither)
+- `jp2a` (clásico, soporta `--background=dark|light`, `--chars`, `--width/--size`)
+
+Notas verificadas en documentación:
+- `chafa` soporta `--font-ratio` (por defecto 1/2 en modo símbolos) y `--dither` con sinónimos: `fs` ≈ Floyd–Steinberg (diffusion). Fuente: man page de chafa.
+- `jp2a` soporta `--background=dark|light` y `--chars=...` y `--width/--size`. Fuente: man page de jp2a.
 
 Comandos de referencia (ajustar al caso):
 
-**chafa (grises, buena fidelidad)**
+**chafa (fidelidad, grises, dither FS, ratio correcto)**
 ```bash
-chafa -c none --symbols=ascii --dither=fs -s {{WIDTH}}x {{IMAGE}}
+chafa -c none --symbols=ascii --font-ratio 1/2 --dither fs -s {{WIDTH}}x {{IMAGE}}
 ```
 
-**chafa (alto contraste / posterizado)**
+**chafa (más detalle: subir work + dither grain)**
 ```bash
-chafa -c none --symbols=ascii --dither=ordered --threshold  --invert -s {{WIDTH}}x {{IMAGE}}
+chafa -c none --symbols=ascii --font-ratio 1/2 --work 7 --dither diffusion --dither-grain 4x4 -s {{WIDTH}}x {{IMAGE}}
 ```
 
-> Nota: la sintaxis exacta puede variar por versión; si el comando falla, revisar `chafa --help` y adaptar.
+**jp2a (fidelidad simple + background correcto)**
+```bash
+jp2a --background=dark --width={{WIDTH}} {{IMAGE}}
+```
+
+**jp2a (charset custom, más rango tonal)**
+```bash
+jp2a --background=dark --width={{WIDTH}} --chars=" .'\"`^,:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$" {{IMAGE}}
+```
 
 ### Paso 3 — Selección de charset
 - Para fidelidad: ` .:-=+*#%@`
