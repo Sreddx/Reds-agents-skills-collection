@@ -6,6 +6,23 @@ Estructura:
 
 - `skills/<skill-name>/SKILL.md`
 - `agents/<agent-name>/` (SOUL.md, USER.md, AGENTS.md, etc.)
+- `examples/` para templates de runtime config
+- `docs/` para instalación y uso
+
+## Nuevos artefactos de Dev Suite
+
+- `agents/dev-suite-supervisor/`
+- `agents/tech-orchestrator-dev/`
+- `skills/gsap-react-motion/`
+- `examples/openclaw.dev-suite.example.json`
+- `docs/dev-suite-installation.md`
+
+## Quick start
+
+1. Revisa `docs/dev-suite-installation.md`
+2. Usa `examples/openclaw.dev-suite.example.json` como base para tu runtime
+3. Ajusta paths, skills y `subagents.allowAgents`
+4. Bootstrappea el proyecto objetivo antes de ejecutar el suite
 
 Smoke checks (desde el workspace donde vive Skillforge):
 

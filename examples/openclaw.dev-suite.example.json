@@ -1,0 +1,118 @@
+{
+  "notes": [
+    "Example only. Merge into your ~/.openclaw/openclaw.json and adjust paths/models.",
+    "Do not copy secrets into this file.",
+    "All workspace paths below are placeholders and must be replaced."
+  ],
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "minimax-m2.7",
+        "fallbacks": ["minimax-m2.7-highspeed"]
+      },
+      "thinkingDefault": "low",
+      "timeoutSeconds": 1800,
+      "subagents": {
+        "maxConcurrent": 3
+      }
+    },
+    "list": [
+      {
+        "id": "tech-orchestrator",
+        "workspace": "<workspace-root>/tech-orchestrator",
+        "default": false,
+        "skills": [],
+        "subagents": {
+          "allowAgents": ["team_lead", "research", "patron_agent", "agent_sync"]
+        }
+      },
+      {
+        "id": "team_lead",
+        "workspace": "<workspace-root>/team_lead",
+        "skills": ["self-improving-agent"],
+        "subagents": {
+          "allowAgents": [
+            "planner",
+            "agent_prep",
+            "frontend",
+            "backend",
+            "db",
+            "devstart",
+            "tester_back",
+            "tester_front",
+            "validator",
+            "github",
+            "docs"
+          ]
+        }
+      },
+      {
+        "id": "planner",
+        "workspace": "<workspace-root>/planner",
+        "skills": ["self-improving-agent"]
+      },
+      {
+        "id": "agent_prep",
+        "workspace": "<workspace-root>/agent_prep"
+      },
+      {
+        "id": "frontend",
+        "workspace": "<workspace-root>/frontend",
+        "skills": ["ui-ux-pro-max", "gsap-react-motion"]
+      },
+      {
+        "id": "backend",
+        "workspace": "<workspace-root>/backend"
+      },
+      {
+        "id": "db",
+        "workspace": "<workspace-root>/db"
+      },
+      {
+        "id": "devstart",
+        "workspace": "<workspace-root>/devstart"
+      },
+      {
+        "id": "tester_back",
+        "workspace": "<workspace-root>/tester_back"
+      },
+      {
+        "id": "tester_front",
+        "workspace": "<workspace-root>/tester_front"
+      },
+      {
+        "id": "validator",
+        "workspace": "<workspace-root>/validator",
+        "skills": ["clean-code-review", "self-improving-agent"]
+      },
+      {
+        "id": "github",
+        "workspace": "<workspace-root>/github"
+      },
+      {
+        "id": "docs",
+        "workspace": "<workspace-root>/docs-agent"
+      },
+      {
+        "id": "research",
+        "workspace": "<workspace-root>/research"
+      },
+      {
+        "id": "agent_sync",
+        "workspace": "<workspace-root>/agent_sync"
+      },
+      {
+        "id": "patron_agent",
+        "workspace": "<workspace-root>/patron_agent"
+      }
+    ]
+  },
+  "skills": {
+    "load": {
+      "extraDirs": [
+        "<workspace-root>/skills",
+        "<workspace-root>/Reds-agents-skills-collection/skills"
+      ]
+    }
+  }
+}
